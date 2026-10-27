@@ -1,14 +1,55 @@
-from typing import Self, cast
+from typing import Any, Callable, Generic, Self, TypeVar, cast, overload
 
-from ..field import Field
+from ..field import Field, _Optional, _Required, _MISSING
+
+OutputT = TypeVar("OutputT")
+NewOutputT = TypeVar("NewOutputT")
+IntState = TypeVar("IntState", _Required, _Optional)
 
 
-class IntField(Field[int]):
+class IntField(
+    Field[int, OutputT, IntState],
+    Generic[OutputT, IntState],
+):
     def _validate(self, value: int) -> None:
         if type(value) is not int:
             raise TypeError("This field expects an integer.")
 
         super()._validate(value)
+
+    @overload
+    def optional(
+        self: "IntField[OutputT, _Required]",
+    ) -> "IntField[OutputT, _Optional]": ...
+
+    @overload
+    def optional(
+        self: "IntField[OutputT, _Optional]",
+    ) -> "IntField[OutputT, _Optional]": ...
+
+    def optional(self) -> Any:
+        self._optional = True
+        return self
+
+    @overload
+    def transform(
+        self: "IntField[OutputT, _Required]",
+        fn: Callable[[OutputT], NewOutputT],
+    ) -> "IntField[NewOutputT, _Required]": ...
+
+    @overload
+    def transform(
+        self: "IntField[OutputT, _Optional]",
+        fn: Callable[[OutputT], NewOutputT],
+    ) -> "IntField[NewOutputT, _Optional]": ...
+
+    def transform(
+        self,
+        fn: Callable[[Any], Any],
+    ) -> Any:
+        previous = self._transform
+        self._transform = lambda value: fn(previous(value))
+        return self
 
     def positive(self) -> Self:
 
@@ -18,7 +59,7 @@ class IntField(Field[int]):
 
         self._validators.append(check)
 
-        if self._default is not None:
+        if self._default is not _MISSING:
             self._validate(cast(int, self._default))
 
         return self
@@ -30,7 +71,7 @@ class IntField(Field[int]):
 
         self._validators.append(check)
 
-        if self._default is not None:
+        if self._default is not _MISSING:
             self._validate(cast(int, self._default))
 
         return self
@@ -42,7 +83,7 @@ class IntField(Field[int]):
 
         self._validators.append(check)
 
-        if self._default is not None:
+        if self._default is not _MISSING:
             self._validate(cast(int, self._default))
 
         return self
@@ -51,5 +92,8 @@ class IntField(Field[int]):
         return self.min(minimum).max(maximum)
 
 
-def integer() -> IntField:
-    return IntField(type=int)
+def integer() -> IntField[int, _Required]:
+    return cast(
+        IntField[int, _Required],
+        IntField(type=int),
+    )

@@ -1,20 +1,58 @@
-from typing import Self, cast
+from typing import Any, Callable, Generic, Self, TypeVar, cast, overload
 
 from validators.domain import domain
 from validators.email import email
 from validators.url import url
-from ..field import Field
+from ..field import Field, _Optional, _Required, _MISSING
 
 import re
 from validators import uuid
 
+OutputT = TypeVar("OutputT")
+NewOutputT = TypeVar("NewOutputT")
+StringState = TypeVar("StringState", _Required, _Optional)
 
-class StringField(Field[str]):
+
+class StringField(Field[str, OutputT, StringState], Generic[OutputT, StringState]):
     def _validate(self, value: str) -> None:
         if not isinstance(value, str):
             raise TypeError("This field expects a string.")
 
         super()._validate(value)
+
+    @overload
+    def optional(
+        self: "StringField[OutputT, _Required]",
+    ) -> "StringField[OutputT, _Optional]": ...
+
+    @overload
+    def optional(
+        self: "StringField[OutputT, _Optional]",
+    ) -> "StringField[OutputT, _Optional]": ...
+
+    def optional(self) -> Any:
+        self._optional = True
+        return self
+
+    @overload
+    def transform(
+        self: "StringField[OutputT, _Required]",
+        fn: Callable[[OutputT], NewOutputT],
+    ) -> "StringField[NewOutputT, _Required]": ...
+
+    @overload
+    def transform(
+        self: "StringField[OutputT, _Optional]",
+        fn: Callable[[OutputT], NewOutputT],
+    ) -> "StringField[NewOutputT, _Optional]": ...
+
+    def transform(
+        self,
+        fn: Callable[[Any], Any],
+    ) -> Any:
+        previous = self._transform
+        self._transform = lambda value: fn(previous(value))
+        return self
 
     def regex(self, regex: str) -> Self:
         def check(value: str) -> None:
@@ -23,7 +61,7 @@ class StringField(Field[str]):
 
         self._validators.append(check)
 
-        if self._default is not None:
+        if self._default is not _MISSING:
             self._validate(cast(str, self._default))
 
         return self
@@ -35,7 +73,7 @@ class StringField(Field[str]):
 
         self._validators.append(check)
 
-        if self._default is not None:
+        if self._default is not _MISSING:
             self._validate(cast(str, self._default))
 
         return self
@@ -47,7 +85,7 @@ class StringField(Field[str]):
 
         self._validators.append(check)
 
-        if self._default is not None:
+        if self._default is not _MISSING:
             self._validate(cast(str, self._default))
 
         return self
@@ -59,7 +97,7 @@ class StringField(Field[str]):
 
         self._validators.append(check)
 
-        if self._default is not None:
+        if self._default is not _MISSING:
             self._validate(cast(str, self._default))
 
         return self
@@ -71,7 +109,7 @@ class StringField(Field[str]):
 
         self._validators.append(check)
 
-        if self._default is not None:
+        if self._default is not _MISSING:
             self._validate(cast(str, self._default))
 
         return self
@@ -83,7 +121,7 @@ class StringField(Field[str]):
 
         self._validators.append(check)
 
-        if self._default is not None:
+        if self._default is not _MISSING:
             self._validate(cast(str, self._default))
 
         return self
@@ -98,11 +136,11 @@ class StringField(Field[str]):
 
         self._validators.append(check)
 
-        if self._default is not None:
+        if self._default is not _MISSING:
             self._validate(cast(str, self._default))
 
         return self
 
 
-def string() -> StringField:
-    return StringField(type=str)
+def string() -> StringField[str, _Required]:
+    return cast(StringField[str, _Required], StringField(type=str))

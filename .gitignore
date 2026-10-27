@@ -3,3 +3,4 @@ htmlcov
 .venv
 .pytest_cache
 __pycache__
+typely.egg-info

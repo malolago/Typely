@@ -1,5 +1,5 @@
 [project]
-name = "validation-library"
+name = "typely"
 version = "0.1.0"
 description = "A lightweight, descriptor-based data validation library."
 readme = "README.md"

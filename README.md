@@ -113,6 +113,10 @@ result_code: int = reading.result[0]
 Tuple positions are precisely typed for tuples of up to five fields. As with
 any Python typing workflow, use a type checker such as mypy or Pyright to get
 static feedback; Typely also enforces its validation rules at runtime.
+The `assert_type` checks in
+[tests/typechecking/basemodel_types.py](./tests/typechecking/basemodel_types.py)
+verify inferred attribute types when fields are read from `BaseModel` instances,
+including inherited, nested, optional, and transformed fields.
 
 ## Transforming values
 
@@ -143,11 +147,6 @@ class Label(BaseModel):
 label = Label()
 print(label.value)  # TYPELY
 ```
-
-This example returns a string, so its result matches the declared field type.
-For accurate static typing, keep a transform's result compatible with that
-field's type; type-changing transforms are not currently reflected in the
-inferred field type.
 
 ## Optional fields and defaults
 

@@ -1,12 +1,16 @@
 from datetime import date as Date, datetime
-from typing import Literal, Self, cast, overload
+from typing import Any, Callable, Generic, TypeVar, Self, Literal, Self, cast, overload
 
-from ..field import Field
+from ..field import Field, _Optional, _Required, _MISSING
 
 DateFormat = Literal["iso8601", "strptime"]
 
+OutputT = TypeVar("OutputT")
+NewOutputT = TypeVar("NewOutputT")
+DateState = TypeVar("DateState", _Required, _Optional)
 
-class DateField(Field[Date]):
+
+class DateField(Field[Date, OutputT, DateState], Generic[OutputT, DateState]):
     def __init__(
         self,
         format: DateFormat = "iso8601",
@@ -57,6 +61,40 @@ class DateField(Field[Date]):
         normalized = self._as_date(value)
         super()._validate(normalized)
 
+    @overload
+    def optional(
+        self: "DateField[OutputT, _Required]",
+    ) -> "DateField[OutputT, _Optional]": ...
+
+    @overload
+    def optional(
+        self: "DateField[OutputT, _Optional]",
+    ) -> "DateField[OutputT, _Optional]": ...
+
+    def optional(self) -> Any:
+        self._optional = True
+        return self
+
+    @overload
+    def transform(
+        self: "DateField[OutputT, _Required]",
+        fn: Callable[[OutputT], NewOutputT],
+    ) -> "DateField[NewOutputT, _Required]": ...
+
+    @overload
+    def transform(
+        self: "DateField[OutputT, _Optional]",
+        fn: Callable[[OutputT], NewOutputT],
+    ) -> "DateField[NewOutputT, _Optional]": ...
+
+    def transform(
+        self,
+        fn: Callable[[Any], Any],
+    ) -> Any:
+        previous = self._transform
+        self._transform = lambda value: fn(previous(value))
+        return self
+
     def __set__(self, instance: object, value: Date | str) -> None:
         normalized = self._as_date(value)
         self._validate(normalized)
@@ -87,8 +125,8 @@ class DateField(Field[Date]):
         else:
             raise ValueError(f"Unsupported date format: {format_type!r}.")
 
-        if self._default is not None:
-            self._validate(self._default)
+        if self._default is not _MISSING:
+            self._validate(cast(Date | str, self._default))
 
         return self
 
@@ -101,8 +139,8 @@ class DateField(Field[Date]):
 
         self._validators.append(check)
 
-        if self._default is not None:
-            self._validate(self._default)
+        if self._default is not _MISSING:
+            self._validate(cast(Date | str, self._default))
 
         return self
 
@@ -115,8 +153,8 @@ class DateField(Field[Date]):
 
         self._validators.append(check)
 
-        if self._default is not None:
-            self._validate(self._default)
+        if self._default is not _MISSING:
+            self._validate(cast(Date | str, self._default))
 
         return self
 
@@ -138,18 +176,19 @@ class DateField(Field[Date]):
 def date(
     format: Literal["iso8601"] = "iso8601",
     strp: None = None,
-) -> DateField: ...
+) -> DateField[Date, _Required]: ...
 
 
 @overload
 def date(
     format: Literal["strptime"],
     strp: str,
-) -> DateField: ...
+) -> DateField[Date, _Required]: ...
 
 
 def date(
     format: DateFormat = "iso8601",
     strp: str | None = None,
-) -> DateField:
+) -> DateField[Date, _Required]:
+    return cast(DateField[Date, _Required], DateField(format, strp))
     return DateField(format, strp)

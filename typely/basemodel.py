@@ -5,7 +5,7 @@ from .field import Field
 
 class BaseModel:
     def __init__(self, **kwargs: object) -> None:
-        fields: dict[str, Field[Any]] = {}
+        fields: dict[str, Field[Any, Any, Any]] = {}
         nested: dict[str, type[BaseModel]] = {}
 
         for cls in reversed(type(self).__mro__):
