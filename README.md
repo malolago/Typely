@@ -1,37 +1,54 @@
-# Typely
+# Typely 
 
-**Keep your data tidy, your models readable, and your types with you every step of the way.**
+Validation for Python models that stays out of your way.
 
-Typely is a lightweight validation library for Python models. Declare fields
-right where you use them, chain the rules that matter, and get clear feedback
-when a value does not fit. No separate schemas or decorator-heavy setup—just
-Python classes, readable declarations, and validation that follows your data.
+Declare your fields where you use them, chain the constraints you care about, and get a clear error when a value doesn't fit.
+
+
+```python
+from typely import BaseModel, integer, string
+
+
+class User(BaseModel):
+    name = string().default("Guest")
+    age = integer().min(0).max(130)
+    score = integer().between(0, 100).default(50)
+
+
+user = User(age=25, score=92)
+print(user.name)  # Guest
+user.age = -1     # ValueError
+```
 
 ## Why Typely?
 
-- **Declarative models** — define fields once and use them as regular attributes.
-- **Immediate validation** — invalid values are rejected during assignment,
-  including values passed to a model constructor.
-- **Composable constraints** — chain checks such as `.positive()`, `.between()`,
-  and `.email()`.
-- **Useful built-in types** — integers, strings, dates, lists, and fixed-shape
-  tuples.
-- **Defaults and optional fields** — make fields optional or provide validated
-  defaults.
-- **End-to-end typing** — field declarations carry their types through model
-  attributes, assignments, collection items, and tuple positions, so your editor
-  and type checker can help throughout your code.
-- **Python 3.11+** — uses modern Python typing features.
+Because validation should live where the data lives. A few things Typely cares about:
 
-## Installation
+- Fields are declared once, then behave like normal attributes.
+- Validation runs on every assignment, including values passed to the constructor. A bad value never silently replaces a good one.
+- Constraints chain the way you'd expect: `.positive()`, `.between(1, 5)`, `.email()`, ...
+- The usual suspects are built in: integers, strings, dates, lists, and fixed-shape tuples.
+- Fields can be optional, or carry validated defaults.
+- Types travel with your fields — through attributes, assignments, list items, and tuple positions — so your editor and type checker can actually help.
+- Python 3.11+, because the modern typing features are worth it.
 
-Typely requires Python 3.11 or later. To install from a source checkout:
+## Installation 📦
+
+Typely needs Python 3.11 or later. The easiest way to install it is straight from GitHub, with uv:
 
 ```bash
-python -m pip install .
+uv add "typely @ git+https://github.com/malolago/Typely.git"
 ```
 
-## Get started
+Or, if you prefer working from a local clone:
+
+```bash
+git clone https://github.com/malolago/Typely.git
+cd Typely
+uv sync
+```
+
+## Getting started 🚀
 
 ```python
 from typely import BaseModel, integer, string
@@ -53,24 +70,25 @@ user.age = -1      # Raises ValueError
 User(age=25, unknown=1)  # Raises TypeError
 ```
 
-Values are checked both during construction and whenever they are assigned
-afterwards. A failed assignment does not replace the field's previous value.
-Unknown keyword arguments passed to a model constructor raise `TypeError`.
+A few details worth knowing up front:
 
-## Fields and constraints
+- Values are checked at construction *and* on every assignment afterwards.
+- A failed assignment doesn't replace the field's previous value, so nothing gets corrupted.
+- Unknown keyword arguments in a constructor raise `TypeError`, so typos don't slip through.
+
+## Fields and constraints 🧩
 
 Import the field factories from `typely`:
 
-| Factory | Validates | Available constraints |
+| Factory | Validates | Constraints |
 | --- | --- | --- |
-| `integer()` | Integers (booleans are not accepted as integers) | `.positive()`, `.min(n)`, `.max(n)`, `.between(min, max)` |
+| `integer()` | Integers (no, `True` is not an integer here) | `.positive()`, `.min(n)`, `.max(n)`, `.between(min, max)` |
 | `string()` | Strings | `.regex(pattern)`, `.uuid()`, `.email()`, `.url()`, `.domain()`, `.min(n)`, `.max(n)`, `.between(min, max)` |
 | `date()` | `datetime.date`, `datetime.datetime`, or a date string | `.min(date)`, `.max(date)`, `.between(min, max)` |
 | `array(field)` | A list whose elements match `field` | `.minLength(n)`, `.maxLength(n)`, `.fixedLength(n)`, `.distinct()` |
-| `uple(...)` | A tuple with one matching field per position | Constraints on each tuple element's field |
+| `uple(...)` | A tuple with one matching field per position | Whatever constraints each element's field supports |
 
-Constraints can be chained. Defaults are validated when they are set and again
-if later constraints are added:
+Constraints chain freely. Defaults are validated when set, and re-validated if you add constraints afterwards:
 
 ```python
 from typely import BaseModel, array, integer, string
@@ -82,17 +100,11 @@ class Product(BaseModel):
     ratings = array(integer().between(1, 5)).maxLength(10)
 ```
 
-Integer and date `.min()` / `.max()` bounds are inclusive. String `.min(n)`
-accepts strings with **at least** `n` characters, and `.max(n)` accepts strings
-with **at most** `n` characters. In other words, both string length boundaries
-are inclusive too.
+Be mindful however, bounds are inclusive. `.min(0)` accepts 0, string `.min(3)` wants *at least* 3 characters, and `.max(n)` at most `n`.
 
-## Typed from declaration to use
+## Types, all the way down 🧠
 
-Typely uses generic fields and typed descriptors so a field's type stays visible
-as you read and assign model attributes. Collection and tuple factories carry
-element types too, helping your editor and type checker catch mismatches before
-you run the code:
+Typely leans on generic fields and typed descriptors, so a field's type stays visible as you read and assign model attributes. Collection factories carry their element types too. Your editor and type checker catch mismatches before you even run the code:
 
 ```python
 from typely import BaseModel, array, integer, string, uple
@@ -110,20 +122,11 @@ first_value: int = reading.values[0]
 result_code: int = reading.result[0]
 ```
 
-Tuple positions are precisely typed for tuples of up to five fields. As with
-any Python typing workflow, use a type checker such as mypy or Pyright to get
-static feedback; Typely also enforces its validation rules at runtime.
-The `assert_type` checks in
-[tests/typechecking/basemodel_types.py](./tests/typechecking/basemodel_types.py)
-verify inferred attribute types when fields are read from `BaseModel` instances,
-including inherited, nested, optional, and transformed fields.
+Tuple positions are precisely typed (for tuples of up to five fields). As with any Python typing, you'll want a type checker like mypy or Pyright for static feedback. Typely enforces its rules at runtime regardless.
 
-## Transforming values
+## Transforming values ✨
 
-Use `.transform()` to control the value returned when a field is read. Typely
-validates and stores the original value; the transform is applied when you
-access the field. This is handy for presentation or normalization without
-changing the value you assigned:
+Sometimes you want to store one thing and read back another — normalizing a string, say, without touching what was actually assigned. That's what `.transform()` is for: the original value is validated and stored, and the transform runs when you read the field:
 
 ```python
 from typely import BaseModel, string
@@ -137,7 +140,7 @@ user = User(name="ada lovelace")
 print(user.name)  # Ada Lovelace
 ```
 
-Transforms compose with field constraints and defaults:
+Transforms play nicely with constraints and defaults:
 
 ```python
 class Label(BaseModel):
@@ -148,11 +151,9 @@ label = Label()
 print(label.value)  # TYPELY
 ```
 
-## Optional fields and defaults
+## Optional fields and defaults ⚙️
 
-An unassigned required field raises `AttributeError` when read. Use
-`.optional()` to make an unset field return `None`, or `.default(value)` to
-provide a validated fallback:
+Reading a required field that was never assigned raises `AttributeError`. If that's not what you want, make the field `.optional()` (unset reads as `None`) or give it a validated `.default(value)`:
 
 ```python
 from typely import BaseModel, string
@@ -168,12 +169,11 @@ assert profile.nickname is None
 assert profile.display_name == "Anonymous"
 ```
 
-Defaults are shared field-level values; use immutable defaults where possible.
+One caveat: defaults are shared at the field level, so stick to immutable values where you can.
 
-## Dates
+## Dates 📅
 
-Date fields accept `datetime.date` objects, `datetime.datetime` objects (which
-are normalized to dates), and strings. ISO 8601 is the default string format:
+Date fields accept `datetime.date` objects, `datetime.datetime` objects (normalized to dates), and strings — ISO 8601 by default:
 
 ```python
 from typely import BaseModel, date
@@ -187,7 +187,7 @@ event = Event(day="2026-10-26")
 print(event.day)  # datetime.date(2026, 10, 26)
 ```
 
-For another string format, use Python's `strptime` format directives:
+For another format, tell the field to use `strptime` directives:
 
 ```python
 from typely import BaseModel, date
@@ -200,12 +200,9 @@ class Appointment(BaseModel):
 appointment = Appointment(day="26/10/2026")
 ```
 
-Date values are stored and returned as `datetime.date` objects, not strings.
+## Lists and tuples 📋
 
-## Lists and tuples
-
-Pass a field factory to `array()` to validate every list element. Use
-`minLength()`, `maxLength()`, or `fixedLength()` to constrain the collection:
+Hand a field factory to `array()` and every element gets validated. Length constraints are right there too:
 
 ```python
 from typely import BaseModel, array, integer
@@ -218,7 +215,7 @@ class Survey(BaseModel):
 survey = Survey(answers=[4, 5, 3])
 ```
 
-Use `uple()` for a tuple whose positions have different validation rules:
+For tuples where each position has its own rules, use `uple()`:
 
 ```python
 from typely import BaseModel, integer, string, uple
@@ -231,14 +228,11 @@ class Measurement(BaseModel):
 measurement = Measurement(result=(42, "ok"))
 ```
 
-The tuple must have exactly the same number of values as the fields passed to
-`uple()`. Both forms are supported: `uple(integer(), string())` and
-`uple((integer(), string()))`.
+The tuple must have exactly as many values as the fields you passed — and both `uple(integer(), string())` and `uple((integer(), string()))` work.
 
-## Nested models
+## Nested models 🪆
 
-Use a nested model instance as a field default, or annotate a field with a
-`BaseModel` subclass to accept it in the parent constructor:
+Models compose the way you'd hope. Use a nested model instance as a field default, or annotate a field with a `BaseModel` subclass to accept it in the parent constructor:
 
 ```python
 from typely import BaseModel, integer, string
@@ -257,8 +251,7 @@ user = User(age=25, address=Address(city="Paris"))
 print(user.address.city)  # Paris
 ```
 
-Nested model instances used as defaults can be overridden when constructing the
-parent:
+A nested instance used as a default can still be overridden at construction:
 
 ```python
 class UserWithDefaultAddress(BaseModel):
@@ -273,25 +266,52 @@ user = UserWithDefaultAddress(age=25, address=Address(city="Lyon"))
 assert user.address.city == "Lyon"
 ```
 
-## Error behavior
+## When things go wrong 💥
 
-Typely uses Python exceptions to make validation failures explicit:
+Typely keeps its error vocabulary small, on purpose:
 
-- `TypeError` for a value with the wrong type or an unknown model constructor
-  argument.
-- `ValueError` for a value that has the right type but fails a constraint.
-- `AttributeError` when reading a required field that has not been assigned and
-  has no default.
+- `TypeError` — wrong type, or an unknown keyword argument in a constructor.
+- `ValueError` — right type, but a constraint says no.
+- `AttributeError` — you read a required field that was never assigned and has no default.
 
-## Development
+## Development 🛠️
 
-Run the test suite from the project directory:
+Clone the repo and sync dependencies with uv:
 
 ```bash
-python -m pytest
+git clone https://github.com/malolago/Typely.git
+cd Typely
+uv sync
 ```
 
-## License
+Dev dependencies live in the dev group of `pyproject.toml` — add new ones with `uv add --dev`.
 
-No license is currently specified in the project. Add a license before
-redistributing Typely or accepting contributions under an open-source license.
+Run the tests:
+
+```bash
+uv run pytest
+```
+
+With coverage:
+
+```bash
+uv run pytest --cov=typely --cov-report=term-missing
+```
+
+Lint and formatting are handled by ruff:
+
+```bash
+uv run ruff check .        # lint
+uv run ruff format --check .  # format check
+
+uv run ruff check --fix .  # auto-fix
+uv run ruff format .       # format
+```
+
+## Contributing 🤝
+
+Issues and pull requests are welcome! If you're adding a feature or fixing a bug, a test or two to go with it goes a long way. 🙌
+
+## License 📜
+
+Typely is released under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** license.
