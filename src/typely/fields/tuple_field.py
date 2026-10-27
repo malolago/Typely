@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, Generic, TypeVar, Self, cast, overload
+from typing import Any, Generic, TypeVar, cast, overload
 
 from ..field import Field, _Optional, _Required
 

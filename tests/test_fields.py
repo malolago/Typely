@@ -22,7 +22,7 @@ def test_required_field_without_value_raises_attribute_error() -> None:
         value = Field[int](int)
 
     with pytest.raises(AttributeError, match="Field 'value' has no value"):
-        Model().value
+        _ = Model().value
 
 
 def test_instance_assignment_overrides_default() -> None:

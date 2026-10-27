@@ -106,7 +106,7 @@ def test_tuple_field_rejects_non_tuple_values() -> None:
         value = uple(integer(), string())
 
     with pytest.raises(TypeError, match="expects a tuple"):
-        setattr(Model(), "value", [1, "one"])
+        Model().value = [1, "one"]
 
 
 @pytest.mark.parametrize(
@@ -128,7 +128,7 @@ def test_tuple_field_reports_the_position_of_an_invalid_element(
         value = uple(integer(), string())
 
     with pytest.raises(TypeError, match=message):
-        setattr(Model(), "value", value)
+        Model().value = value
 
 
 def test_tuple_field_preserves_element_validation_exception_type_and_cause() -> None:
@@ -139,7 +139,7 @@ def test_tuple_field_preserves_element_validation_exception_type_and_cause() -> 
         ValueError,
         match=r"Invalid element at index 0: Value must be positive\.",
     ) as exc:
-        setattr(Model(), "value", (0, "zero"))
+        Model().value = 0, "zero"
 
     assert isinstance(exc.value.__cause__, ValueError)
     assert str(exc.value.__cause__) == "Value must be positive."
@@ -160,7 +160,7 @@ def test_tuple_field_rejects_too_few_or_too_many_values(
         value = uple(integer(), string())
 
     with pytest.raises(TypeError, match=message):
-        setattr(Model(), "value", value)
+        Model().value = value
 
 
 def test_tuple_field_validates_every_element_field() -> None:
@@ -195,7 +195,7 @@ def test_tuple_field_runs_its_own_validators_after_element_validation() -> None:
         Model().value = (4, "one")
 
     with pytest.raises(TypeError, match="Invalid element at index 1"):
-        setattr(Model(), "value", (1, 2))
+        Model().value = 1, 2
 
 
 def test_tuple_field_accepts_tuple_subclasses() -> None:
@@ -247,7 +247,7 @@ def test_tuple_field_without_default_or_optional_value_raises() -> None:
         value = uple(integer(), string())
 
     with pytest.raises(AttributeError, match="Field 'value' has no value"):
-        Model().value
+        _ = Model().value
 
 
 def test_tuple_field_transformations_compose_and_do_not_change_validation() -> None:
@@ -264,7 +264,7 @@ def test_tuple_field_transformations_compose_and_do_not_change_validation() -> N
     assert model.value == "1:ONE"
 
     with pytest.raises(TypeError, match="Invalid element at index 0"):
-        setattr(model, "value", ("one", 1))
+        model.value = "one", 1
 
     assert model.value == "1:ONE"
 

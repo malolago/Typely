@@ -1,4 +1,5 @@
-from datetime import date as Date, datetime
+from datetime import UTC, datetime
+from datetime import date as Date
 
 import pytest
 
@@ -36,7 +37,7 @@ def test_date_field_normalizes_datetime_to_date() -> None:
         birthday = date()
 
     model = Model()
-    model.birthday = datetime(2026, 10, 26, 14, 30)
+    model.birthday = datetime(2026, 10, 26, 14, 30, tzinfo=UTC)
 
     assert model.birthday == Date(2026, 10, 26)
     assert type(model.birthday) is Date
@@ -103,7 +104,7 @@ def test_date_field_parses_string_default() -> None:
 
 def test_date_field_normalizes_datetime_default() -> None:
     class Model:
-        birthday = date().default(datetime(2026, 10, 26, 14, 30))
+        birthday = date().default(datetime(2026, 10, 26, 14, 30, tzinfo=UTC))
 
     assert Model().birthday == Date(2026, 10, 26)
     assert type(Model().birthday) is Date

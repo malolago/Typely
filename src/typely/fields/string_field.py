@@ -1,12 +1,13 @@
-from typing import Any, Callable, Generic, Self, TypeVar, cast, overload
+import re
+from collections.abc import Callable
+from typing import Any, Generic, Self, TypeVar, cast, overload
 
+from validators import uuid
 from validators.domain import domain
 from validators.email import email
 from validators.url import url
-from ..field import Field, _Optional, _Required, _MISSING
 
-import re
-from validators import uuid
+from ..field import _MISSING, Field, _Optional, _Required
 
 OutputT = TypeVar("OutputT")
 NewOutputT = TypeVar("NewOutputT")

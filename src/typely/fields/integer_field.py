@@ -1,6 +1,7 @@
-from typing import Any, Callable, Generic, Self, TypeVar, cast, overload
+from collections.abc import Callable
+from typing import Any, Generic, Self, TypeVar, cast, overload
 
-from ..field import Field, _Optional, _Required, _MISSING
+from ..field import _MISSING, Field, _Optional, _Required
 
 OutputT = TypeVar("OutputT")
 NewOutputT = TypeVar("NewOutputT")

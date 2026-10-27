@@ -1,7 +1,9 @@
-from datetime import date as Date, datetime
-from typing import Any, Callable, Generic, TypeVar, Self, Literal, Self, cast, overload
+from collections.abc import Callable
+from datetime import date as Date
+from datetime import datetime
+from typing import Any, Generic, Literal, Self, TypeVar, cast, overload
 
-from ..field import Field, _Optional, _Required, _MISSING
+from ..field import _MISSING, Field, _Optional, _Required
 
 DateFormat = Literal["iso8601", "strptime"]
 
@@ -28,7 +30,7 @@ class DateField(Field[Date, OutputT, DateState], Generic[OutputT, DateState]):
             if self._format_type == "iso8601":
                 return Date.fromisoformat(value)
 
-            return datetime.strptime(
+            return datetime.strptime(  # noqa: DTZ007
                 value,
                 cast(str, self._strptime_format),
             ).date()
